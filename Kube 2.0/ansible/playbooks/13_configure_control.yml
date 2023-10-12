@@ -1,0 +1,53 @@
+---
+- name: Configure control plane node for kubernetes
+  hosts: control
+  become: true
+  become_user: root
+  tasks:
+    - name: Initialize kubernetes cluster
+      ansible.builtin.shell: |
+        kubeadm init --control-plane-endpoint={{ ansible_host }} --pod-network-cidr=10.244.0.0/16 --cri-socket=unix:///var/run/crio/crio.sock 
+      register: kube_init
+
+    - name: Print the kubeadm initialization output
+      ansible.builtin.debug: msg="{{ kube_init }}"
+    - name: Create .kube if it does not exist
+      ansible.builtin.file:
+        path: /home/bobbymayyy/.kube
+        state: directory
+        mode: '0755'
+        owner: bobbymayyy
+        group: bobbymayyy
+    - name: Copies admin.conf to user's kube config #Could also be kubelet.conf, make sure to check if having issues
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/bobbymayyy/.kube/config
+        remote_src: yes
+        owner: bobbymayyy
+        group: bobbymayyy
+    - name: Template calico config to prevent downloading from random url
+      ansible.builtin.template:
+        src: ../templates/calico.yaml.j2
+        dest: /root/calico.yaml.j2
+        owner: bobbymayyy
+        group: bobbymayyy
+        mode: 0644
+    - name: Initialize calico networking
+      ansible.builtin.command: kubectl apply -f calico.yaml
+      register: calico_init
+    - name: Print the calico initialization output
+      ansible.builtin.debug: msg="{{ calico_init }}"
+    - name: "Gather kubernetes cluster token"
+      ansible.builtin.shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
+      register: k8s_token
+    - name: Gather kubernetes CA hash
+      ansible.builtin.shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+      register: k8s_master_ca_hash
+    - name: Add k8s Token and Hash to dummy host
+      ansible.builtin.add_host:
+        name:  k8s_token_holder"
+        host: "{{ ansible_host }}"
+        token: "{{ k8s_token.stdout }}"
+        hash: "{{ k8s_master_ca_hash.stdout }}"
+    - name: Test your deployment out with just control plane running
+      ansible.builtin.debug: msg="Run 'kubectl get nodes' to see node status.\nRun 'kubectl get pods -A' afterwards to see status of pods.\nYou can use 'watch kubectl get pods -A' to see the status every 2 seconds.\nHave fun! :)"

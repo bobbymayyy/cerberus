@@ -1,0 +1,60 @@
+---
+- name: Install needed packages, configure kubernetes and SELinux
+  hosts: kubernetes
+  become: true
+  become_user: root
+  tasks:
+    - name: Install a modularity appstream for CRI-O with default profile
+      ansible.builtin.dnf:
+        name: '@cri-o:1.25/default'
+        state: present
+    - name: Enable CRI-O
+      ansible.builtin.service:
+        name: crio
+        state: started
+        enabled: true
+    - name: Install Kubernetes
+      ansible.builtin.dnf: name={{ item }} state=present
+      with_items:
+      - kubernetes-kubeadm
+      - kubernetes-node
+      - kubernetes-client
+      - cri-tools
+      - iproute-tc
+      - container-selinux
+    - name: Set kubelet address to serve on all interfaces
+      ansible.builtin.replace:
+        path: /etc/kubernetes/kubelet
+        regexp: '^KUBELET_ADDRESS.*$'
+        replace: 'KUBELET_ADDRESS="--address=0.0.0.0"'
+    - name: Specify kubelet port by uncommenting
+      ansible.builtin.replace:
+        path: /etc/kubernetes/kubelet
+        regexp: '^#KUBELET_PORT.*$'
+        replace: 'KUBELET_PORT="--port=10250"'
+    - name: Set kubelet hostname using ansible_host var
+      ansible.builtin.replace:
+        path: /etc/kubernetes/kubelet
+        regexp: '^KUBELET_HOSTNAME.*$'
+        replace: 'KUBELET_HOSTNAME="--hostname-override={{ ansible_host }}"'
+    - name: Set kubelet extra args
+      ansible.builtin.replace:
+        path: /etc/systemd/system/kubelet.service.d/kubeadm.conf
+        regexp: '^Environment="KUBELET_EXTRA_ARGS.*$'
+        replace: 'Environment="KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock"'
+    - name: Enable but don't start kubelet
+      ansible.builtin.service:
+        name: kubelet
+        enabled: true
+    - name: Template k8s config for SELinux
+      ansible.builtin.template:
+        src: ../templates/k8s.te.j2
+        dest: /root/k8s.te
+        owner: root
+        group: root
+        mode: 0644
+    - name: Update SELinux with config created
+      ansible.builtin.shell: |
+        checkmodule -m -M -o k8s.mod k8s.te
+        semodule_package --outfile k8s.pp --module k8s.mod
+        semodule -i k8s.pp

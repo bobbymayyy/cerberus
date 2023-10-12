@@ -1,0 +1,63 @@
+---
+- name: System settings configuration for Fedora
+  hosts: kubernetes
+  become: true
+  become_user: root
+  vars:
+    sysctl_config:
+      net.bridge.bridge-nf-call-iptables: 1
+      net.bridge.bridge-nf-call-ip6tables: 1
+      net.ipv4.ip_forward: 1
+  tasks:
+    - name: Load bridge network filter and overlay modprobe module
+      community.general.modprobe:
+        name: '{{ item }}'
+        state: present
+      with_items:
+        - br_netfilter
+        - overlay
+    - name: Update sysctl parameters
+      ansible.posix.sysctl:
+        sysctl_file: /etc/sysctl.d/99-k8s-cri.conf
+        name: '{{ item.key }}'
+        value: '{{ item.value }}'
+        state: present
+        reload: yes
+      with_dict: '{{ sysctl_config }}'
+    - name: Download and switch to legacy iptables
+      community.general.alternatives:
+        name: iptables-legacy
+        state: selected
+        path: /usr/sbin/xtables-legacy-multi
+        link: /usr/sbin/iptables-legacy
+    - name: Disable SWAP since kubernetes can't work with SWAP enabled
+      ansible.builtin.shell: |
+        touch /etc/systemd/zram-generator.conf
+        swapoff -a
+        sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+    - name: Disable zram specific to fedora
+      ansible.builtin.dnf:
+        name: zram-generator-defaults
+        state: absent
+    - name: Disable firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: stopped
+        enabled: false
+    - name: Disable systemd-resolved
+      ansible.builtin.service:
+        name: systemd-resolved
+        state: stopped
+        enabled: false
+    - name: Edit NetworkManager.conf
+      ansible.builtin.replace:
+        path: /etc/NetworkManager/NetworkManager.conf
+        regexp: \#plugins=keyfile,ifcfg-rh
+        replace: dns=default
+    - name: Disable SWAP since kubernetes can't work with SWAP enabled
+      ansible.builtin.shell: |
+        unlink /etc/resolv.conf
+        touch /etc/resolv.conf
+    - name: Reboot a slow machine that might have lots of updates to apply
+      ansible.builtin.reboot:
+        reboot_timeout: 240

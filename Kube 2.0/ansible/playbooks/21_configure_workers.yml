@@ -1,0 +1,12 @@
+---
+- name: Configure worker nodes for kubernetes
+  hosts: workers
+  become: true
+  become_user: root
+  tasks:
+    - name: Join worker node to control plane using kubeadm
+      ansible.builtin.shell: |
+        kubeadm join {{ hostvars['K8s_token_holder']['host'] }}:6443 --token {{ hostvars['K8s_token_holder']['token'] }} --discovery-token-ca-cert-hash sha256:{{ hostvars['K8s_token_holder']['hash'] }}
+      register: worker_init
+    - name: Print the calico initialization output
+      ansible.builtin.debug: msg="{{ worker_init }}"
