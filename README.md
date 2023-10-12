@@ -5,6 +5,7 @@
 -------------------------------------------------------------------------------------------------------------------------------------------
 1. [Install Kubeadm](#install-kubeadm)
 2. [Configure Control Plane](#configure-control-plane)
+3. [Configure Worker Node](#configure-worker-node)
 ### Install Kubeadm
 ----------------------
 For system requirements; each node must have a unique hostname, MAC address, and product_uuid.\
@@ -173,7 +174,7 @@ This example is based on the environment like follows.
 |     Control Plane    |   |      Worker Node     |   |      Worker Node     |
 +----------------------+   +----------------------+   +----------------------+
 ```
-*Configure pre-requirements on all nodes, refer to here*.
+[Configure pre-requirements on all nodes, refer to here.](#install-kubeadm)
 
 For [control-plane-endpoint], specify the hostname or IP address that etcd and Kubernetes API server are run.\
 For [--pod-network-cidr] option, specify network for pods.\
@@ -303,5 +304,50 @@ kube-system   kube-proxy-9dx9j                          1/1     Running   0     
 kube-system   kube-scheduler-dlp.srv.world              1/1     Running   0          3m44s
 ```
 ------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------
+### Configure Worker Node
+--------------------------------------------------------------------------
+This example is based on the environment like follows.
+```
+-----------+---------------------------+--------------------------+------------
+           |                           |                          |
+       eth0|10.0.0.30              eth0|10.0.0.51             eth0|10.0.0.52
++----------+-----------+   +-----------+----------+   +-----------+----------+
+|   [ dlp.srv.world ]  |   | [ node01.srv.world ] |   | [ node02.srv.world ] |
+|     Control Plane    |   |      Worker Node     |   |      Worker Node     |
++----------------------+   +----------------------+   +----------------------+
+```
+[Configure pre-requirements on all nodes, refer to here.](#install-kubeadm)
+#### Join in Kubernetes Cluster which is initialized on Control Plane Node. (We're ok if 'This node has joined the cluster:')
+```
+kubeadm join 10.0.0.30:6443 --token 3wx2wn.0dkhtd9i26gsrc3t --discovery-token-ca-cert-hash sha256:b430cc64408d3349fc368c1d611638a0b71bd10c1ef47254afe414ecfaa200ca
+```
+```
+[preflight] Running pre-flight checks
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Starting the kubelet
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+
+Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
+```
+#### Verify STATUS on control plane node. We're ok if all STATUS are Ready.
+```
+kubectl get nodes
+```
+```
+NAME               STATUS   ROLES           AGE     VERSION
+dlp.srv.world      Ready    control-plane   7m33s   v1.26.4
+node01.srv.world   Ready    <none>          43s     v1.26.4
+node02.srv.world   Ready    <none>          12s     v1.26.4
+```
+------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
 [^1]: This process flow is based off the linked blog tutorial but ansible-lized.
 [^2]: The ansible will disable firewalld, you do not need to manually.
