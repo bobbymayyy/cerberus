@@ -1,4 +1,4 @@
-# cerberus
+# CERBERUS
 ![cerberus](assets/cerberus.png)
 ## Ansible to deploy Kubernetes onto Fedora
 [Fedora 38: Kubernetes with Kubeadm](https://www.server-world.info/en/note?os=Fedora_38&p=kubernetes&f=1) [^1]
