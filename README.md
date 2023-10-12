@@ -162,6 +162,7 @@ semodule -i k8s.pp
 ----------------------------------------------------------------------------------------------------------------- 
 -----------------------------------------------------------------------------------------------------------------
 ### Configure Control Plane
+-----------------------------------------------------------------------
 This example is based on the environment like follows.
 ```
 -----------+---------------------------+--------------------------+------------
@@ -172,15 +173,15 @@ This example is based on the environment like follows.
 |     Control Plane    |   |      Worker Node     |   |      Worker Node     |
 +----------------------+   +----------------------+   +----------------------+
 ```
-[1] 	
-Configure pre-requirements on all Nodes, refer to here.
+*Configure pre-requirements on all nodes, refer to here*.
 
-Configure initial setup on Control Plane Node.\
-For [control-plane-endpoint], specify the Hostname or IP address that Etcd and Kubernetes API server are run.\
+For [control-plane-endpoint], specify the hostname or IP address that etcd and Kubernetes API server are run.\
 For [--pod-network-cidr] option, specify network for pods.\
-There are some plugins for Pod Network. (Refer to details in link below.)\
+There are some plugins for pod network. (Refer to details in link below.)\
 [Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/)\
 On this example, it selects Calico.
+#### Configure initial setup on Control Plane Node.
+-----------------------------------------------------------------------
 ##### Initialize Kubernetes with arguments.
 ```
 kubeadm init --control-plane-endpoint=10.0.0.30 --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///var/run/crio/crio.sock
