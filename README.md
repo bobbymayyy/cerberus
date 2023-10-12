@@ -227,17 +227,17 @@ and service account keys on each node and then running the following as root:
 ```
 #### Set cluster admin. (If you set common user as cluster admin, login with it and run: (sudo cp/chown ***))
 --------------------------------------------------------------------------------------------------------
-##### Make kube directory.
+##### Make kube directory. (As common user.)
 ```
 mkdir -p $HOME/.kube
 ```
-##### Copy over kube admin conf.
+##### Copy over kube admin conf. (As common user.)
 ```
-cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 ```
-##### Change ownership of copy.
+##### Change ownership of copy. (As common user.)
 ```
-chown $(id -u):$(id -g) $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 #### Configure Pod Network with Calico.
 -----------------------------------------------------------------------------------------------
