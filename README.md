@@ -6,6 +6,8 @@
 1. [Install Kubeadm](#install-kubeadm)
 2. [Configure Control Plane](#configure-control-plane)
 3. [Configure Worker Node](#configure-worker-node)
+----------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
 ### Install Kubeadm
 ----------------------
 For system requirements; each node must have a unique hostname, MAC address, and product_uuid.\
