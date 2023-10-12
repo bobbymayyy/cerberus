@@ -91,7 +91,6 @@ reboot
 ```
 #### On all nodes, install required packages.
 -----------------------------------------------------------------
-We're gonna use CRI-O for our cri.\
 ##### Installs a modularity appstream for CRI-O with a default profile.
 ```
 dnf module -y install cri-o:1.25/default
@@ -225,6 +224,7 @@ and service account keys on each node and then running the following as root:
         --control-plane
 ```
 #### Set cluster admin. (If you set common user as cluster admin, login with it and run: (sudo cp/chown ***))
+--------------------------------------------------------------------------------------------------------
 ##### Make kube directory.
 ```
 mkdir -p $HOME/.kube
@@ -238,6 +238,7 @@ cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 #### Configure Pod Network with Calico.
+-----------------------------------------------------------------------------------------------
 ##### Download the calico conf from Github. (Included as Jinja template instead.)
 ```
 wget https://raw.githubusercontent.com/projectcalico/calico/master/manifests/calico.yaml
@@ -279,6 +280,8 @@ clusterrolebinding.rbac.authorization.k8s.io/calico-cni-plugin created
 daemonset.apps/calico-node created
 deployment.apps/calico-kube-controllers created
 ```
+#### Verify status of Kubernetes from control plane node.
+----------------------------------------------------------------------------------------------------
 ##### Show kube state of nodes : OK if STATUS = Ready.
 ```
 kubectl get nodes
@@ -319,6 +322,7 @@ This example is based on the environment like follows.
 ```
 [Configure pre-requirements on all nodes, refer to here.](#install-kubeadm)
 #### Join in Kubernetes Cluster which is initialized on Control Plane Node. (We're ok if 'This node has joined the cluster:')
+-----------------------------------------------------------------------------------------------------------------------------------
 ```
 kubeadm join 10.0.0.30:6443 --token 3wx2wn.0dkhtd9i26gsrc3t --discovery-token-ca-cert-hash sha256:b430cc64408d3349fc368c1d611638a0b71bd10c1ef47254afe414ecfaa200ca
 ```
@@ -338,6 +342,7 @@ This node has joined the cluster:
 Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
 ```
 #### Verify STATUS on control plane node. We're ok if all STATUS are Ready.
+-------------------------------------------------------------------------------------------------------------------------------------
 ```
 kubectl get nodes
 ```
